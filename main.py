@@ -10,16 +10,27 @@ from fastapi.staticfiles import StaticFiles
 import time
 from collections import deque
 
+# Initialize FastAPI application
 app = FastAPI()
+
+# Set up Jinja2 templates directory
 templates = Jinja2Templates(directory="templates")
+
+# Mount the static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Initialize MediaPipe Hand Tracking model and utilities
 mpHands = mp.solutions.hands
 my_hands = mpHands.Hands()
 mpDraw = mp.solutions.drawing_utils
 
+# 손가락 특정 랜드마크 인덱스
 compareIndex = [[18, 4], [6, 8], [10, 12], [14, 16], [18, 20]]
+
+# 다섯손가락의 펴짐 상태
 open = [False] * len(compareIndex)
+
+# 나라별 제스처 매핑(손가락 펴짐 유무 포함)
 gesture = [
     [True, True, True, True, True, "Open Palm"],
     [False, False, True, True, True, "OK"],
@@ -28,7 +39,7 @@ gesture = [
     [True, True, False, False, True, "Rock&Roll"],
     [False, True, True, False, False, "V"],
 ]
-# 나라별 제스처 매핑
+# 나라별 제스처 매핑(Target Gesture 설정 위해)
 country_gestures = {
     "Brazil": "OK",
     "Turkey": "Thumb up",
@@ -60,13 +71,18 @@ def dist(x1, y1, x2, y2):
 def process_frame(frame):
     global webcam_active, webcam_start_time, gesture_buffer
     h, w, c = frame.shape
+    # RGR -> RGB 색상 변경
     imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # 손 랜드마크 인식 모델
     results = my_hands.process(imgRGB)
 
     recognized_gesture = None
 
+    # 손 랜드마크 인식 결과 있을 경우.
     if results.multi_hand_landmarks:
+        # 손 랜드마크 별로 루프(20개)
         for idx, handLms in enumerate(results.multi_hand_landmarks):
+            # 다섯 손가락이 모두 펼쳐져 있는지 아닌지 확인
             for i in range(0, 5):
                 open[i] = dist(
                     handLms.landmark[0].x,
@@ -79,8 +95,10 @@ def process_frame(frame):
                     handLms.landmark[compareIndex[i][1]].x,
                     handLms.landmark[compareIndex[i][1]].y,
                 )
-
+            # 손의 왼쪽/오른쪽 여부 확인
             handedness = results.multi_handedness[idx].classification[0].label
+            # 왼손인 경우 엄지손가락 끝이 새끼손가락 끝보다 오른쪽에 있다면 손바닥이 보이는 것으로 판단
+            # 오른손인 경우 엄지손가락 끝이 새끼손가락 끝보다 왼쪽에 있다면 손바닥이 보이는 것으로 판단
             palm_visible = (
                 (handLms.landmark[4].x > handLms.landmark[20].x)
                 if handedness == "Left"
@@ -90,15 +108,17 @@ def process_frame(frame):
                     else False
                 )
             )
-
+            # text 위치
             text_x = int(handLms.landmark[0].x * w)
             text_y = int(handLms.landmark[0].y * h)
 
             for g in gesture:
                 if g[:5] == open:
                     gesture_name = g[5]
+                    # 손바닥이 보이는 "V"와 손등이 보이는 "Reverse V" 구분
                     if gesture_name == "V" and not palm_visible:
                         gesture_name = "Reverse V"
+                    # 화면에 텍스트 표시
                     cv2.putText(
                         frame,
                         gesture_name,
@@ -138,19 +158,11 @@ def process_frame(frame):
     return frame
 
 
+# Function to provide video stream from webcam
 def get_stream_video():
     global webcam_active, webcam_start_time
 
     cap = cv2.VideoCapture(0)
-    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # 1080
-    # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    # writer = cv2.VideoWriter(
-    #     # mac or linux *'XVID'
-    #     "mysupervideo.mp4",
-    #     cv2.VideoWriter_fourcc(*"DIVX"),
-    #     20,
-    #     (width, height),
-    # )
     if not cap.isOpened():
         print("카메라를 열 수 없습니다!")
         return
@@ -159,13 +171,10 @@ def get_stream_video():
 
     while webcam_active:
         success, frame = cap.read()
-        # writer.write(frame)
         if not success:
             break
 
         frame = process_frame(frame)
-        # cap.release()
-        # cv2.destroyAllWindows()
         ret, buffer = cv2.imencode(".jpg", frame)
         frame = buffer.tobytes()
         yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
@@ -174,6 +183,7 @@ def get_stream_video():
     yield (b"--frame\r\n" b"Content-Type: text/plain\r\n\r\n" + b"WEB_CAM_OFF\r\n")
 
 
+# Route for the home page
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(
@@ -181,6 +191,7 @@ async def index(request: Request):
     )
 
 
+# Route to handle gesture selection and restart webcam
 @app.post("/set_gesture", response_class=HTMLResponse)
 async def set_gesture(request: Request, country: str = Form(...)):
     global TARGET_GESTURE, webcam_active, webcam_start_time
@@ -201,6 +212,7 @@ async def set_gesture(request: Request, country: str = Form(...)):
     )
 
 
+# Route to stream video feed
 @app.get("/video")
 def video_feed():
     return StreamingResponse(
@@ -208,4 +220,4 @@ def video_feed():
     )
 
 
-# uvicorn main:app --reload
+# fastapi 구동 명령어: uvicorn main:app --reload

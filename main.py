@@ -42,16 +42,21 @@ country_gestures = {
     "China": "mini",
 }
 
+# 웹캠 상태 변수
 webcam_active = True
 webcam_start_time = None
+# 제스처 인식 버퍼 지정
 gesture_buffer = deque(maxlen=30)  # 최근 30프레임의 제스처를 저장
+# 목표 제스처 변수 초기 설정
 TARGET_GESTURE = None
 
 
+# 거리 계산 함수
 def dist(x1, y1, x2, y2):
     return math.sqrt(math.pow(x1 - x2, 2)) + math.sqrt(math.pow(y1 - y2, 2))
 
 
+# 프레임 처리 함수
 def process_frame(frame):
     global webcam_active, webcam_start_time, gesture_buffer
     h, w, c = frame.shape
@@ -135,7 +140,17 @@ def process_frame(frame):
 
 def get_stream_video():
     global webcam_active, webcam_start_time
+
     cap = cv2.VideoCapture(0)
+    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # 1080
+    # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # writer = cv2.VideoWriter(
+    #     # mac or linux *'XVID'
+    #     "mysupervideo.mp4",
+    #     cv2.VideoWriter_fourcc(*"DIVX"),
+    #     20,
+    #     (width, height),
+    # )
     if not cap.isOpened():
         print("카메라를 열 수 없습니다!")
         return
@@ -144,6 +159,7 @@ def get_stream_video():
 
     while webcam_active:
         success, frame = cap.read()
+        # writer.write(frame)
         if not success:
             break
 
@@ -167,8 +183,14 @@ async def index(request: Request):
 
 @app.post("/set_gesture", response_class=HTMLResponse)
 async def set_gesture(request: Request, country: str = Form(...)):
-    global TARGET_GESTURE
+    global TARGET_GESTURE, webcam_active, webcam_start_time
+
     TARGET_GESTURE = country_gestures.get(country)
+
+    # Reset the webcam state to restart the gesture recognition process
+    webcam_active = True
+    webcam_start_time = time.time()
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -184,3 +206,6 @@ def video_feed():
     return StreamingResponse(
         get_stream_video(), media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+# uvicorn main:app --reload

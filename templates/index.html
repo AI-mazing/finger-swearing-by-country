@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hand Gesture Recognition</title>
+</head>
+<body>
+    <h1>Hand Gesture Recognition</h1>
+    <form action="/set_gesture" method="post">
+        <select name="country">
+            {% set countries = ["Brazil", "Turkey", "Middle East", "France", "Australia", "Greece", "UK", "New Zealand", "Italy", "China"] %}
+            {% for country in countries %}
+                <option value="{{ country }}" {% if country == selected_country %}selected{% endif %}>{{ country }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Select Country">
+    </form>
+    <img id="videoFeed" src="{{ url_for('video_feed') }}" width="640" height="480">
+    <p>Target Gesture: {{ TARGET_GESTURE }}</p>
+    <p>When the target gesture is recognized, the webcam will turn off.</p>
+
+    <script>
+        const videoFeed = document.getElementById('videoFeed');
+
+        videoFeed.onerror = function() {
+            // 웹캠 스트리밍이 중지되면, 이미지와 텍스트를 변경합니다.
+            videoFeed.src = "";
+            videoFeed.alt = 'Webcam turned off due to gesture recognition.';
+            videoFeed.insertAdjacentHTML('afterend', '<p>The webcam has been turned off because the target gesture was recognized.</p>');
+        };
+    </script>
+</body>
+</html>

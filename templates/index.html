@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>거리 장면과 채팅</title>
+  <style>
+    /* 전체 래퍼 스타일 */
+    div#wrap {
+      padding: 10px;
+      width: 1000px;
+      height: 600px;
+      margin: 0 auto;
+    }
+    /* 로고 영역 스타일 */
+    div.logoArea {
+      text-align: center;
+    }
+    div.logoArea img {
+      width: 40%;
+      margin-bottom: 10px;
+    }
+    /* 채팅 메시지 스타일 */
+    .chat-message {
+      display: inline-block;
+      border: 3px solid #aaa;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <!-- 로고 영역 -->
+    <div class="logoArea">
+      <img src="static/img/image.png" alt="거리 장면" class="street-image">
+    </div>
+    <!-- 시스템 메시지 -->
+    <div class="chat-message">
+      <img src="static/img/logo.png" alt="로고" style="width: 50px;">
+      <strong>시스템:</strong> 상파울루의 한 시장에서 카스트로가 다가옵니다.
+    </div>
+    <br>
+    <!-- 카스트로 메시지 -->
+    <div class="chat-message">
+      <img src="static/img/Ellipse.png" alt="카스트로">
+      <strong>카스트로:</strong> (거칠게 손을 흔들며) 어이, 외국인 이거 사지않을래?
+    </div>
+    <!-- 시스템 메시지 -->
+    <div class="chat-message">
+      <img src="static/img/logo.png" alt="로고" style="width: 50px;">
+      <strong>시스템:</strong> 카스트로가 강매를 하려고 합니다. 제스처를 따라해보세요!
+    </div>
+    <br>
+    
+    <!-- 웹캠 영상 표시 영역 -->
+    <img id="videoFeed" src="/video_feed/{{ session_id }}" width="640" height="480">
+    <p>Target Gesture: {{ target_gesture }}</p>
+    <p>When the target gesture is recognized, the webcam will turn off.</p>
+    
+  </div>
+
+  <script>
+    const sessionId = "{{ session_id }}";
+    
+    // 페이지 로드 시 자동으로 웹캠 시작
+    window.onload = function() {
+      document.getElementById('videoFeed').src = `/video_feed/${sessionId}?t=${new Date().getTime()}`;
+    };
+  </script>
+</body>
+</html>

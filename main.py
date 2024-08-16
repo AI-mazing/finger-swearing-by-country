@@ -73,7 +73,7 @@ gesture_guidline = {
     "OK" : "ok.png",
     "mini" : "mini.png",
     "Thumb up" : "thumb.png",
-    "Rock&Roll" : "rocknrole.png",
+    "Rock&Roll" : "rocknroll.png",
     "V" : "v.png",
     "Reverse V" : "rv.png"
 }

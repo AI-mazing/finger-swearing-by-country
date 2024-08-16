@@ -152,7 +152,7 @@ def process_frame(frame, session_state: SessionState):
     # 인식된 제스처를 제스처 버퍼에 추가
     session_state.gesture_buffer.append(recognized_gesture)
 
-    # 대상 제스처가 버퍼에서 80% 이상 인식된 경우
+    # 대상 제스처가 버퍼에서 40% 이상 인식된 경우
     if (
         session_state.gesture_buffer.count(session_state.target_gesture)
         / len(session_state.gesture_buffer)

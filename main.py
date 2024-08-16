@@ -10,6 +10,7 @@ from collections import deque
 import asyncio
 import uuid
 import uvicorn
+import random
 
 # FastAPI 앱 초기화
 app = FastAPI()
@@ -52,6 +53,30 @@ country_gestures = {
     "China": "Mini",
 }
 
+# 나라별 제스처 매핑
+country_gestures = {
+    "Brazil": ["OK"],
+    "Turkey": ["OK","V", "Open Palm"],
+    "Middle East": ["OK", "Thumb up"],
+    "France": ["OK"],
+    "Australia": ["Thumb up", "Reverse V"],
+    "Greece": ["Thumb up", "V", "Open Palm"],
+    "UK": ["Reverse V"],
+    "New Zealand": ["Reverse V"],
+    "Italy": ["Rock&Roll"],
+    "China": ["mini"],
+}
+
+# 제스쳐 별 가이드라인 매핑
+gesture_guidline = {
+    "Open Palm" : "palm.png",
+    "OK" : "ok.png",
+    "mini" : "mini.png",
+    "Thumb up" : "thumb.png",
+    "Rock&Roll" : "rocknrole.png",
+    "V" : "v.png",
+    "Reverse V" : "rv.png"
+}
 
 # 세션별 데이터를 저장하기 위한 클래스
 class SessionState:
@@ -60,6 +85,7 @@ class SessionState:
         self.webcam_start_time = time.time()  # 웹캠 시작 시간
         self.gesture_buffer = deque(maxlen=30)  # 인식된 제스처를 저장하기 위한 버퍼
         self.target_gesture = None  # 세션의 대상 제스처
+        self.overlay_image = None # 대상 제스쳐 가이드라인
         self.websocket = None  # WebSocket 연결 저장
 
 
@@ -71,6 +97,21 @@ sessions = {}
 def dist(x1, y1, x2, y2):
     return math.sqrt(math.pow(x1 - x2, 2)) + math.sqrt(math.pow(y1 - y2, 2))
 
+# PNG 이미지를 프레임에 오버레이하는 함수
+def overlay_image_on_frame(frame, overlay):
+    # 이미지 크기 조정 (프레임과 동일한 크기로 조정)
+    overlay_resized = cv2.resize(overlay, (frame.shape[1], frame.shape[0]))
+
+    # PNG 파일은 투명한 배경을 가지고 있기 때문에 알파 채널을 고려하여 오버레이합니다.
+    alpha_overlay = overlay_resized[:, :, 3] / 255.0  # 알파 채널
+    alpha_frame = 1.0 - alpha_overlay
+
+    # 오버레이 이미지의 알파 채널을 고려하여 합성
+    for c in range(0, 3):
+        frame[:, :, c] = (alpha_overlay * overlay_resized[:, :, c] +
+                          alpha_frame * frame[:, :, c])
+
+    return frame
 
 # 각 프레임을 처리하고 제스처를 인식하는 함수
 def process_frame(frame, session_state: SessionState):
@@ -148,6 +189,8 @@ def process_frame(frame, session_state: SessionState):
             frame, "Preparing...", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
         )
         return frame
+
+    frame = overlay_image_on_frame(frame, session_state.overlay_image)
 
     # 인식된 제스처를 제스처 버퍼에 추가
     session_state.gesture_buffer.append(recognized_gesture)
@@ -239,7 +282,10 @@ async def index(request: Request):
         sessions[session_id] = SessionState()
 
     # 세션에 대한 대상 제스처 임의 설정
-    sessions[session_id].target_gesture = country_gestures.get("Brazil")
+    target_country = "Brazil"
+    gestures = country_gestures.get(target_country)
+    sessions[session_id].target_gesture =  random.choice(gestures)
+    sessions[session_id].overlay_image = cv2.imread(f"static/{gesture_guidline.get(sessions[session_id].target_gesture)}", cv2.IMREAD_UNCHANGED)
 
     # index.html 템플릿에 필요한 데이터와 함께 렌더링
     response = templates.TemplateResponse(
@@ -250,6 +296,7 @@ async def index(request: Request):
             "selected_country": "Brazil",
             "session_id": session_id,
             "target_gesture": sessions[session_id].target_gesture,
+            "overlay_image" : sessions[session_id].overlay_image
         },
     )
     response.set_cookie(key="session_id", value=session_id)  # 세션 ID 쿠키 설정

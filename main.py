@@ -357,7 +357,25 @@ async def global_page(request: Request):
 # Situation1 페이지
 @app.get("/situation1", response_class=HTMLResponse)
 async def situation1(request: Request, country: str = None):
+    
+    session_id = request.cookies.get("session_id")
+    print(f"Session ID in /situation1: {session_id}")
+    # 쿠키에 세션 ID가 없을 때 새로 생성
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        print(f"New Session ID generated: {session_id}")
+    # 세션 상태가 없을 때 새로 생성
+    if session_id not in sessions:
+        sessions[session_id] = SessionState()
+        print(f"New session state created for Session ID: {session_id}")
 
+    # 선택된 국가가 없을 때 Global 페이지로 리다이렉트
+    if country is None:
+        return RedirectResponse(url="/global")
+    elif country == "random":
+        country = random.choice(list(country_gestures.keys()))
+    sessions[session_id].country = country
+    # gestures = country_gestures.get(country)
     # country_name을 기반으로 시나리오 내용과 nation_person_name을 가져오는 쿼리
     query = """
     SELECT 
@@ -385,25 +403,6 @@ async def situation1(request: Request, country: str = None):
         message = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
 
     background_image = find_image(country, "background")
-    
-    session_id = request.cookies.get("session_id")
-    print(f"Session ID in /situation1: {session_id}")
-    # 쿠키에 세션 ID가 없을 때 새로 생성
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        print(f"New Session ID generated: {session_id}")
-    # 세션 상태가 없을 때 새로 생성
-    if session_id not in sessions:
-        sessions[session_id] = SessionState()
-        print(f"New session state created for Session ID: {session_id}")
-
-    # 선택된 국가가 없을 때 Global 페이지로 리다이렉트
-    if country is None:
-        return RedirectResponse(url="/global")
-    elif country == "random":
-        country = random.choice(list(country_gestures.keys()))
-    sessions[session_id].country = country
-    # gestures = country_gestures.get(country)
     response = templates.TemplateResponse(
         "situation1.html",
         {
@@ -426,6 +425,21 @@ async def situation1(request: Request, country: str = None):
 # Situation2 페이지
 @app.get("/situation2", response_class=HTMLResponse)
 async def situation2(request: Request, country: str = None):
+
+    session_id = request.cookies.get("session_id")
+    # 쿠키에 세션 ID가 없을 때 새로 생성
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    # 세션 상태가 없을 때 새로 생성
+    if session_id not in sessions:
+        sessions[session_id] = SessionState()
+    country = sessions[session_id].country
+
+    sessions[session_id].target_gesture = random.choice(country_gestures.get(country))
+    sessions[session_id].overlay_image = cv2.imread(
+        f"app/static/img/gestureGuide/{gesture_guidline.get(sessions[session_id].target_gesture)}",
+        cv2.IMREAD_UNCHANGED,
+    )
 
     query = """
     SELECT 
@@ -458,22 +472,6 @@ async def situation2(request: Request, country: str = None):
         message = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
         name = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
         person_image = "/static/img/default_person.jpg"  # 기본 인물 이미지 경로
-
-
-    session_id = request.cookies.get("session_id")
-    # 쿠키에 세션 ID가 없을 때 새로 생성
-    if not session_id:
-        session_id = str(uuid.uuid4())
-    # 세션 상태가 없을 때 새로 생성
-    if session_id not in sessions:
-        sessions[session_id] = SessionState()
-    country = sessions[session_id].country
-
-    sessions[session_id].target_gesture = random.choice(country_gestures.get(country))
-    sessions[session_id].overlay_image = cv2.imread(
-        f"app/static/img/gestureGuide/{gesture_guidline.get(sessions[session_id].target_gesture)}",
-        cv2.IMREAD_UNCHANGED,
-    )
 
     response = templates.TemplateResponse(
         "situation2.html",

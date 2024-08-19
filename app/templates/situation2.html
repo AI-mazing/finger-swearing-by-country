@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>situation</title>
+    <link rel="stylesheet" href="../static/style/style.css">
+</head>
+<body>
+    <div id="wrap" class="situation2">
+        <div class="chat_message">
+            <img src="../static/img/AI-Mazing.png" alt="카스트로" class="globalSystem">
+            <span class="strong">카스트로 :</span>
+            <span class="request2">(거칠게 손을 흔들며) 어이, 외국인 이거 사지않을래?</span>
+        </div>
+
+        <div class="chat_message">
+            <img src="../static/img/AI-Mazing.png" alt="로고" class="system">
+            <span class="strong">시스템 :</span>
+            <span class="request3">카스트로가 강매를 하려고 합니다. 제스처를 따라해보세요!</span>
+        </div>
+
+        <!-- 웹캠 영상 표시 영역 -->
+        <div id="cam">
+            <img id="videoFeed" src="">
+            <p>Country: <span id="country">{{ country }}</span></p>
+            <p>Target Gesture: <span id="targetGesture">{{ target_gesture }}</span></p>
+            <p>When the target gesture is recognized, the webcam will turn off.</p>
+        </div>
+        <!-- div#cam -->
+        
+        <input type="hidden" id="session_id" value="{{ session_id }}">
+    </div>
+    <!-- div#wrap -->
+
+    <script src="../static/lib/jquery-3.7.1.min.js"></script>
+    <script src="../static/js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sessionId = document.getElementById('session_id').value;
+            const videoFeed = document.getElementById('videoFeed');
+            const targetGesture = document.getElementById('targetGesture').textContent;
+            const country = document.getElementById('selected_country').textContent;
+
+            let ws = new WebSocket(`ws://${window.location.host}/ws/${sessionId}`);
+            
+            videoFeed.onload = function() {
+                URL.revokeObjectURL(this.src); // 이미지가 로드되면 blob URL 해제
+            }
+
+            ws.onmessage = function(event) {
+                if (event.data instanceof Blob) {
+                    videoFeed.src = URL.createObjectURL(event.data);
+                } else if (event.data === "gesture_recognized") {
+                    alert(`Target gesture "${targetGesture}" recognized!`);
+                    window.location.href = '/success';
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error("WebSocket error:", error);
+            };
+
+            ws.onclose = function() {
+                console.log("WebSocket connection closed");
+            };
+        });
+    </script>
+</body>
+</html>

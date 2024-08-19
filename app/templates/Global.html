@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobalChoice</title>
+    <link rel="stylesheet" href="../static/style/style.css">
+</head>
+
+<body>
+    <div id="wrap" class="global">
+        <h1>나라를 선택해 주세요</h1>
+
+        <main id="main">
+            <form action="../templates/situation1.html" id="countryForm" method="post">
+                <div id="flag" class="dFlex">
+                    <label id="Brazil">
+                        <img src="../static/img/BrazilFlag.jpg" alt="브라질 국기">
+                        <span>브라질</span>
+                        <input type="radio" name="country" value="Brazil">
+                    </label>
+                    <label id="Turkiye">
+                        <img src="../static/img/TurkiyeFlag.jpg" alt="튀르키예 국기">
+                        <span>튀르키예</span>
+                        <input type="radio" name="country" value="Turkiye">
+                    </label>
+                    <label id="Saudi">
+                        <img src="../static/img/SaudiFlag.gif" alt="사우디 국기">
+                        <span>사우디아라비아 (중동)</span>
+                        <input type="radio" name="country" value="Saudi">
+                    </label>
+                    <label id="France">
+                        <img src="../static/img/FranceFlag.gif" alt="프랑스 국기">
+                        <span>프랑스</span>
+                        <input type="radio" name="country" value="France">
+                    </label>
+                    <label id="Australia">
+                        <img src="../static/img/AustraliaFlag.jpg" alt="호주 국기">
+                        <span>호주</span>
+                        <input type="radio" name="country" value="Australia">
+                    </label>
+                    <label id="Greece">
+                        <img src="../static/img/GreeceFlag.jpg" alt="그리스 국기">
+                        <span>그리스</span>
+                        <input type="radio" name="country" value="Greece">
+                    </label>
+                    <label id="England">
+                        <img src="../static/img/EnglandFlag.jpg" alt="영국 국기">
+                        <span>영국</span>
+                        <input type="radio" name="country" value="England">
+                    </label>
+                    <label id="NewZealand">
+                        <img src="../static/img/NewZealandFlag.jpg" alt="뉴질랜드 국기">
+                        <span>뉴질랜드</span>
+                        <input type="radio" name="country" value="NewZealand">
+                    </label>
+                    <label id="Italia">
+                        <img src="../static/img/ItaliaFlag.gif" alt="이탈리아 국기">
+                        <span>이탈리아</span>
+                        <input type="radio" name="country" value="Italia">
+                    </label>
+                    <label id="China">
+                        <img src="../static/img/ChinaFlag.jpg" alt="중국 국기">
+                        <span>중국</span>
+                        <input type="radio" name="country" value="China">
+                    </label>
+                </div>
+                <label id="random">
+                    <div id="randomFlag">랜덤</div>
+                    <span>랜덤 국가</span>
+                    <input type="radio" name="country" value="random">
+                </label>
+            </form>
+            <!-- try#countryForm -->
+        </main>
+        <!-- main#main -->
+    </div>
+    <!-- div#wrap -->
+    <input type="hidden" id="session_id" value="{{ session_id }}">
+    <script src="../static/lib/jquery-3.7.1.min.js"></script>
+    <script src="../static/js/script.js"></script>
+</body>
+
+</html>

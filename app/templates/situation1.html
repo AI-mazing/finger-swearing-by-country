@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>situation</title>
+    <link rel="stylesheet" href="../static/style/style.css">
+</head>
+
+<body>
+    <div id="wrap" class="situation1">
+        <div class="logoArea">
+            <img src="../static/img/mainBgi.jpg" alt="거리 장면" class="street-image">
+        </div>
+        <div class="chat_message">
+            <img src="../static/img/AI-Mazing.png" alt="로고" class="system">
+            <span class="strong">시스템 : </span>
+            <span class="request1">
+                상파울루의 한 시장에서 카스트로가 다가옵니다.
+            </span>
+        </div>
+        <div id="next"><span><i>NEXT</i></span></div>
+        <form action="situation2.html" id="hiddenSi"><input type="hidden"></form>
+    </div>
+    <input type="hidden" id="session_id" value="{{ session_id }}">
+    <!-- div#wrap -->
+
+    <script src="../static/lib/jquery-3.7.1.min.js"></script>
+    <script src="../static/js/script.js"></script>
+</body>
+
+</html>

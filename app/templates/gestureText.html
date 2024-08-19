@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Try Again</title>
+    <link rel="stylesheet" href="../static/style/style.css">
+</head>
+<body>
+    <div id="wrap" class="gestureText">
+        <h1>제스처의 의미</h1>
+
+        <div id="gestureNation">
+            <h2>사용하면 위험한 국가 & 의미</h2>
+            <div class="gNGroup dFlex">
+                {% if nation1 %}
+                <div class="dangerN">
+                    <img src="{{ nation1[2] }}" alt="{{ nation1[0] }} 국기">
+                    <span>{{ nation1[0] }}</span>
+                    <span>{{ nation1[1] }}</span>
+                </div>
+                {% endif %}
+
+                {% if nation2 %}
+                <div class="dangerN">
+                    <img src="{{ nation2[2] }}" alt="{{ nation2[0] }} 국기">
+                    <span>{{ nation2[0] }}</span>
+                    <span>{{ nation2[1] }}</span>
+                </div>
+                {% endif %}
+
+                {% if nation3 %}
+                <div class="dangerN">
+                    <img src="{{ nation3[2] }}" alt="{{ nation3[0] }} 국기">
+                    <span>{{ nation3[0] }}</span>
+                    <span>{{ nation3[1] }}</span>
+                </div>
+                {% endif %}
+
+                {% if nation4 %}
+                <div class="dangerN">
+                    <img src="{{ nation4[2] }}" alt="{{ nation4[0] }} 국기">
+                    <span>{{ nation4[0] }}</span>
+                    <span>{{ nation4[1] }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="imgBtn" class="dFlex">
+            <div class="gestureImg">
+                <img src="../static/img/gestureText/{{gesture}}" alt="제스처">
+            </div>
+
+            <!-- <div id="next"><span><i id="goMain">Go Main</i></span></div> -->
+        </div>
+
+    </div>
+</body>
+
+</html>

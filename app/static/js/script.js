@@ -11,18 +11,59 @@ $(function () {
         let selectCountry = $(this).find("input").val();
         // 로컬 스토리지에 선택된 값을 저장
         localStorage.setItem('selectedRadioValue', selectCountry);
+
         // /situation1 페이지로 이동하면서 선택된 국가 값을 쿼리 파라미터로 전달
         location.href = "/situation1?country=" + selectCountry;
+        console.log(secImg);
     });
 
     // #next 내부의 span 클릭 이벤트 핸들러
-    $("div#next span").click(function () {
+    $("div#wrap.situation1 div#next span").click(function () {
         // 로컬 스토리지에서 저장된 값을 가져와서
         let selectVal = localStorage.getItem('selectedRadioValue');
         // /situation2 페이지로 이동하면서 선택된 국가 값을 쿼리 파라미터로 전달
         location.href = "/situation2?country=" + selectVal;
         // 선택된 국가 값을 콘솔에 출력
         console.log("selectCountry : " + selectVal);
+    });
+    // 성공 후 설명으로 넘어가기
+    $("div#wrap.success div#next span").click(function () {
+        location.href = "/gestureText";
+    });
+    // // goMain
+    // $("i#goMain").click(function () {
+    //     location.href = "/Main";
+    // });
+
+    // 웹소켓 연결
+    document.addEventListener('DOMContentLoaded', function () {
+        const sessionId = document.getElementById('session_id').value;
+        const videoFeed = document.getElementById('videoFeed');
+        const targetGesture = document.getElementById('targetGesture').textContent;
+        const country = document.getElementById('selected_country').textContent;
+
+        let ws = new WebSocket(`ws://${window.location.host}/ws/${sessionId}`);
+
+        videoFeed.onload = function () {
+            URL.revokeObjectURL(this.src); // 이미지가 로드되면 blob URL 해제
+        }
+
+        ws.onmessage = function (event) {
+            if (event.data instanceof Blob) {
+                videoFeed.src = URL.createObjectURL(event.data);
+            } else if (event.data === "gesture_recognized") {
+                alert(`Target gesture "${targetGesture}" recognized!`);
+                window.location.href = '/success';
+            }
+        };
+
+        ws.onerror = function (error) {
+            console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = function () {
+            console.log("WebSocket connection closed");
+        };
     });
 
     // 페이지 로드 완료 후 실행되는 함수
@@ -33,7 +74,7 @@ $(function () {
             // WebSocket URL을 생성
             const wsUrl = `ws://${window.location.host}/ws/${sessionId}`;
             console.log(`Connecting to WebSocket at ${wsUrl}`);
-            
+
             // WebSocket 객체 생성 및 연결
             const ws = new WebSocket(wsUrl);
 

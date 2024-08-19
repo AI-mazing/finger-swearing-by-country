@@ -4,7 +4,7 @@
 /* 공통 사항 시작 */
 div#wrap {
     width: 1000px;
-    height: 600px;
+    height: 650px;
     padding: 20px;
     border: 4px solid #fff;
     /* border: 4px solid #aaa; */
@@ -38,6 +38,7 @@ div#wrap.main>div#btnArea {
 }
 
 div#wrap.main>div#btnArea button {
+    width: 150px;
     color: #fff;
     font-weight: bold;
     background-color: #03d3c2;
@@ -132,7 +133,7 @@ div#wrap.global main#main input[type=radio] {
 
 /* 상황페이지 시작 */
 div#wrap.situation1 {
-    padding: 50px;
+    padding: 10px;
     background-color: #ece6d9;
 }
 
@@ -146,7 +147,9 @@ div#wrap.situation1 div.logoArea {
 }
 
 div#wrap.situation1 div.logoArea img {
-    width: 80%;
+    width: 600px;
+    height: 400px;
+    margin-top: 20px;
     margin-bottom: 20px;
 }
 
@@ -156,7 +159,7 @@ div#wrap.situation1 div.logoArea img {
     border: 3px solid #aaa;
     border-radius: 10px;
     background-color: #fff;
-    margin-bottom: 10px;
+    margin: 10px;
 }
 
 .chat_message span {
@@ -177,49 +180,28 @@ img.system {
     width: 50px;
 }
 
-div#wrap.situation1 div#next {
+div#next {
     text-align: right;
+    margin-right: 20px;
 }
 
-div#wrap.situation1 div#next span:hover i {
+div#next span:hover i {
     font-weight: bold;
     cursor: pointer;
 }
 
-div#wrap.situation1 div#next span i {
+div#next span i {
     color: brown;
     font-size: 20px;
     text-decoration: underline;
 }
 
 div#cam img {
-    width: 700px;
-    height: 380px;
-    margin-left: 180px;
+    width: 750px;
+    height: 390px;
+    margin-top: 15px;
+    margin-left: 200px;
     border: 1px solid #000;
-}
-
-.person_image {
-    border-radius: 10px;
-    margin-top: 10px;
-    padding: 10px;
-    text-align: right;
-}
-
-.person_image img {
-    width: 80%;
-    border: 3px solid #aaa;
-    border-radius: 10px;
-    padding: 10px;
-}
-
-.person_image {
-    transform: translateX(500px);
-    padding: 10px;
-    display: inline-block;
-    border: 3px solid #aaa;
-    border-radius: 10px;
-    margin-top: 10px;
 }
 
 /* 상황페이지 끝 */
@@ -227,21 +209,128 @@ div#cam img {
 
 /* 제스처 성공 시작 */
 div#wrap.success {
-    padding: 10px;
+    padding: 5px;
     background-color: #ece6d9;
 }
 
-.person-image {
+.person_image {
     border-radius: 10px;
-    margin-top: 10px;
-    padding: 10px;
+    margin: 5px 300px 0;
+    display: block;
 }
 
-.person-image img {
-    width: 40%;
+.person_image img {
+    width: 400px;
+    height: 320px;
     border: 3px solid #aaa;
     border-radius: 10px;
     padding: 10px;
 }
 
 /* 제스처 성공 끝 */
+
+
+/* 제스처 실패 시작 */
+div#wrap.fail {
+    padding: 5px;
+    background-color: #ece6d9;
+}
+
+div#wrap.fail div#btnArea {
+    text-align: right;
+    margin-left: 20px;
+}
+
+div#btnArea button {
+    width: 100px;
+    padding: 5px 10px;
+    font-size: 18px;
+    margin: 25px 10px;
+    border-radius: 10px;
+    border: 3px solid #aaa;
+}
+
+div#btnArea button:hover {
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #fff;
+}
+
+/* 제스처 실패 끝 */
+
+
+/* 다시하기 페이지 시작 */
+div#wrap.gestureText {
+    padding: 0;
+    background-color: #ece6d9;
+}
+
+div#wrap.gestureText h1 {
+    color: #fff;
+    background-color: #000000;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    padding: 5px;
+    text-align: center;
+}
+
+div#gestureNation {
+    padding: 10px 10px;
+    background-color: #aaa;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    justify-content: space-around;
+}
+
+div#gestureNation h2 {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+div.gNGroup {
+    justify-content: space-around;
+}
+
+div.dangerN {
+    width: 170px;
+    text-align: center;
+}
+
+div.dangerN span {
+    width: 170px;
+    font-weight: bold;
+    font-size: 18px;
+    display: inline-block;
+    text-align: center;
+    margin-top: 5px;
+}
+
+div.dangerN img {
+    width: 150px;
+    height: 100px;
+}
+
+div#imgBtn {
+    justify-content: center;
+}
+
+div.gestureImg {
+    width: 500px;
+    border-radius: 10px;
+    margin: 20px;
+    text-align: center;
+}
+
+div.gestureImg img {
+    width: 300px;
+    height: 260px;
+}
+
+div#next i#goMain {
+    margin-top: 250px;
+    margin-left: 50px;
+    width: 100px;
+}
+
+/* 다시하기 페이지 끝 */

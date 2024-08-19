@@ -9,15 +9,15 @@
 <body>
     <div id="wrap" class="situation2">
         <div class="chat_message">
-            <img src="../static/img/AI-Mazing.png" alt="카스트로" class="globalSystem">
-            <span class="strong">카스트로 :</span>
-            <span class="request2">(거칠게 손을 흔들며) 어이, 외국인 이거 사지않을래?</span>
+            <img src="{{person_image}}" alt="{{ name }}" class="globalSystem">
+            <span class="strong">{{ name }} :</span>
+            <span class="request2">{{ message }}</span>
         </div>
 
         <div class="chat_message">
             <img src="../static/img/AI-Mazing.png" alt="로고" class="system">
             <span class="strong">시스템 :</span>
-            <span class="request3">카스트로가 강매를 하려고 합니다. 제스처를 따라해보세요!</span>
+            <span class="request3">{{ name }}가 강매를 하려고 합니다. 제스처를 따라해보세요!</span>
         </div>
 
         <!-- 웹캠 영상 표시 영역 -->

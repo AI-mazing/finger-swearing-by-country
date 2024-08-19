@@ -17,9 +17,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import uvicorn
 from websockets.exceptions import ConnectionClosed
+import mysql.connector
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+
+import os
 
 # CORS 설정: 모든 출처에서의 요청 허용
 origins = ["*"]
+
+# MySQL 연결 설정
+conn = mysql.connector.connect(
+    host='192.168.0.10',
+    user='AIMazing',
+    password='1234',
+    database='etiquette'
+)
 
 # FastAPI 앱 생성
 app = FastAPI()
@@ -51,7 +64,7 @@ gesture = [
     [False, False, True, True, True, "OK"],
     [False, False, False, False, True, "mini"],
     [True, False, False, False, False, "Thumb up"],
-    [True, True, False, False, True, "Rock&Roll"],
+    [False, True, False, False, True, "Rock&Roll"],
     [False, True, True, False, False, "V"],
 ]
 # 나라별 제스처 매핑
@@ -64,7 +77,7 @@ country_gestures = {
     "Greece": ["Thumb up", "V", "Open Palm"],
     "England": ["Reverse V"],
     "NewZealand": ["Reverse V"],
-    "Italia": ["Rock&Roll"],
+    "Italy": ["Rock&Roll"],
     "China": ["mini"],
 }
 
@@ -104,6 +117,7 @@ def dist(x1, y1, x2, y2):
 # PNG 이미지를 프레임에 오버레이하는 함수
 def overlay_image_on_frame(frame, overlay):
     # 이미지 크기 조정 (프레임과 동일한 크기로 조정)
+    if frame is None : return 
     overlay_resized = cv2.resize(overlay, (frame.shape[1], frame.shape[0]))
 
     # PNG 파일은 투명한 배경을 가지고 있기 때문에 알파 채널을 고려하여 오버레이합니다.
@@ -212,6 +226,45 @@ def process_frame(frame, session_state: SessionState):
 
     return frame
 
+def find_image(country, image_name):
+    base_path = f"app/static/img/nation/{country}/"
+    web_base_path = f"/static/img/nation/{country}/"
+    
+    png_path = f"{base_path}{image_name}.png"
+    jpg_path = f"{base_path}{image_name}.jpg"
+    
+    if os.path.exists(png_path):
+        return f"{web_base_path}{image_name}.png"
+    elif os.path.exists(jpg_path):
+        return f"{web_base_path}{image_name}.jpg"
+    else:
+        return f"/static/img/default_{image_name}.jpg"  # 기본 이미지 경로
+
+def find_image2(country):
+    base_path = f"app/static/img/flag/{country}"
+    web_base_path = f"/static/img/flag/{country}"
+    
+    png_path = f"{base_path}Flag.gif"
+    jpg_path = f"{base_path}Flag.jpg"
+    
+    if os.path.exists(png_path):
+        return f"{web_base_path}Flag.gif"
+    elif os.path.exists(jpg_path):
+        return f"{web_base_path}Flag.jpg"
+
+def query_result(val_name, query):
+    cursor = conn.cursor()
+    query = query
+    cursor.execute(query, (val_name,))
+    result = cursor.fetchone()
+    return result
+
+def query_result2(val_name, query):
+    cursor = conn.cursor()
+    query = query
+    cursor.execute(query, (val_name,))
+    result = cursor.fetchall()
+    return result
 
 # WebSocket을 통해 비디오 스트림 제공
 @app.websocket("/ws/{session_id}")
@@ -304,6 +357,35 @@ async def global_page(request: Request):
 # Situation1 페이지
 @app.get("/situation1", response_class=HTMLResponse)
 async def situation1(request: Request, country: str = None):
+
+    # country_name을 기반으로 시나리오 내용과 nation_person_name을 가져오는 쿼리
+    query = """
+    SELECT 
+        sc.scenario_contents,
+        n.nation_person_name
+    FROM 
+        nation AS n
+    JOIN 
+        scenarios AS scn ON n.nation_id = scn.nation_id
+    JOIN 
+        scenario_contents AS sc ON scn.scenario_id = sc.scenario_id
+    WHERE 
+        n.country_name = %s
+    ORDER BY 
+        sc.scenario_content_id
+    LIMIT 1
+    """
+
+    result = query_result(country, query)
+
+    if result:
+        scenario_content, person_name = result
+        message = f"{scenario_content} {person_name}(이)가 당신에게 다가옵니다."
+    else:
+        message = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
+
+    background_image = find_image(country, "background")
+    
     session_id = request.cookies.get("session_id")
     print(f"Session ID in /situation1: {session_id}")
     # 쿠키에 세션 ID가 없을 때 새로 생성
@@ -332,6 +414,8 @@ async def situation1(request: Request, country: str = None):
             "session_id": session_id,
             "target_gesture": sessions[session_id].target_gesture,
             "overlay_image": sessions[session_id].overlay_image,
+            "message" : message,
+            "background_image": background_image
         },
     )
     response.set_cookie(key="session_id", value=session_id)
@@ -342,6 +426,40 @@ async def situation1(request: Request, country: str = None):
 # Situation2 페이지
 @app.get("/situation2", response_class=HTMLResponse)
 async def situation2(request: Request, country: str = None):
+
+    query = """
+    SELECT 
+        GROUP_CONCAT(sc.scenario_contents ORDER BY sc.scenario_content_id SEPARATOR '|') as combined_contents,
+        n.nation_person_name
+    FROM 
+        nation AS n
+    JOIN 
+        scenarios AS scn ON n.nation_id = scn.nation_id
+    JOIN 
+        scenario_contents AS sc ON scn.scenario_id = sc.scenario_id
+    WHERE 
+        n.country_name = %s
+    GROUP BY n.nation_id, n.nation_person_name
+    HAVING COUNT(DISTINCT sc.scenario_content_id) >= 3
+    """
+
+    result = query_result(country, query)
+
+    if result:
+        combined_contents, person_name = result
+        contents_list = combined_contents.split('|')
+        if len(contents_list) >= 3:
+            message = ' '.join(contents_list[1:3])  # 두 번째와 세 번째 시나리오 내용 사용
+        else:
+            message = "충분한 시나리오 내용이 없습니다."
+        name = person_name
+        person_image = find_image(country, "person_smile")
+    else:
+        message = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
+        name = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
+        person_image = "/static/img/default_person.jpg"  # 기본 인물 이미지 경로
+
+
     session_id = request.cookies.get("session_id")
     # 쿠키에 세션 ID가 없을 때 새로 생성
     if not session_id:
@@ -366,6 +484,9 @@ async def situation2(request: Request, country: str = None):
             "selected_country": country,
             "session_id": session_id,
             "target_gesture": sessions[session_id].target_gesture,
+            "message" : message,
+            "name" : name,
+            "person_image" : person_image
         },
     )
     response.set_cookie(key="session_id", value=session_id)
@@ -377,16 +498,108 @@ async def situation2(request: Request, country: str = None):
 @app.get("/success", response_class=HTMLResponse)
 async def success(request: Request):
     session_id = request.cookies.get("session_id")
-    if not session_id or session_id not in sessions:
-        return RedirectResponse(url="/")
+    # 쿠키에 세션 ID가 없을 때 새로 생성
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    # 세션 상태가 없을 때 새로 생성
+    if session_id not in sessions:
+        sessions[session_id] = SessionState()
+    country = sessions[session_id].country
 
-    session_state = sessions[session_id]
+    query = """
+    SELECT sc.scenario_contents, n.nation_person_name
+    FROM 
+        nation AS n
+    JOIN 
+        scenarios AS scn ON n.nation_id = scn.nation_id
+    JOIN 
+        scenario_contents AS sc ON scn.scenario_id = sc.scenario_id
+    WHERE 
+        n.country_name = %s
+    ORDER BY 
+        sc.scenario_content_id DESC
+    LIMIT 1 OFFSET 1
+    """
 
+    result = query_result(country, query)
+
+    if result:
+        message, name = result
+        person_smile_image = find_image(country, "person_smile")
+        person_angry_image = find_image(country, "person_angry")
+    else:
+        message = "해당 국가에 대한 시나리오를 찾을 수 없습니다."
+        name = "알 수 없는 인물"
+        person_smile_image = "/static/img/default_person_smile.jpg"
+        person_angry_image = "/static/img/default_person_angry.jpg"
     # 세션 상태 초기화
-    session_state.gesture_recognized = False
+    sessions[session_id].gesture_recognized = False
 
-    return templates.TemplateResponse("success.html", {"request": request})
+    return templates.TemplateResponse("success.html", 
+                                      {"request": request,
+                                       "message": message,
+                                       "name": name,
+                                       "person_smile_image": person_smile_image,
+                                       "person_angry_image": person_angry_image,
+                                       })
 
+# Success 페이지
+@app.get("/gestureText", response_class=HTMLResponse)
+async def gestureText(request: Request):
+    session_id = request.cookies.get("session_id")
+    # 쿠키에 세션 ID가 없을 때 새로 생성
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    # 세션 상태가 없을 때 새로 생성
+    if session_id not in sessions:
+        sessions[session_id] = SessionState()
+    country = sessions[session_id].country
+    # 세션 상태 초기화
+    sessions[session_id].gesture_recognized = False
+    target_gesture = sessions[session_id].target_gesture
+
+    query = """
+    SELECT 
+        n.country_name, 
+        ng.gesture_mean
+    FROM 
+        nation_gesture ng
+    JOIN 
+        gesture g ON ng.gesture_id = g.gesture_id
+    JOIN
+        nation n ON ng.nation_id = n.nation_id
+    WHERE 
+        g.gesture_name = %s;
+    """
+    
+    result = query_result2(gesture_guidline[target_gesture][:-4], query)
+    # 나라 정보 초기화
+    nation1, nation2, nation3, nation4 = None, None, None, None
+
+    # 결과를 최대 4개까지 할당합니다.
+    if len(result) > 0:
+        nation1 = (result[0][0], result[0][1], find_image2(result[0][0]))
+    if len(result) > 1:
+        nation2 = (result[1][0], result[1][1], find_image2(result[1][0]))
+    if len(result) > 2:
+        nation3 = (result[2][0], result[2][1], find_image2(result[2][0]))
+    if len(result) > 3:
+        nation4 = (result[3][0], result[3][1], find_image2(result[3][0]))
+
+
+    return templates.TemplateResponse(
+        "gestureText.html", 
+        {
+            "request": request,
+            "gesture": gesture_guidline[target_gesture],
+            "nation1": nation1,
+            "nation2": nation2,
+            "nation3": nation3,
+            "nation4": nation4
+        }
+    )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
+

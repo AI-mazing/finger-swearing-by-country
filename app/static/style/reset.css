@@ -1,0 +1,44 @@
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+
+/*/////////////////////////	CSS	리셋	파일	시작	/////////////////////////*/
+* {
+    color: #222;
+    font-family: "Nanum	Gothic", sans-serif;
+    text-decoration: none;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+a:link {
+    color: #333;
+}
+
+a:visited {
+    color: #333;
+}
+
+a:hover {
+    color: #333;
+}
+
+a:active {
+    color: #333;
+}
+
+img {
+    vertical-align: top;
+}
+
+ul {
+    list-style: none;
+}
+
+.dFlex {
+    display: flex;
+}
+
+
+/*/////////////////////////	CSS	리셋	파일	끝	/////////////////////////*/

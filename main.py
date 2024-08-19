@@ -187,10 +187,10 @@ def process_frame(frame, session_state: SessionState):
             frame, "Preparing...", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
         )
         # return frame
-    frame = overlay_image_on_frame(frame, session_state.overlay_image)
+    if session_state.overlay_image is not None:
+        frame = overlay_image_on_frame(frame, session_state.overlay_image)
     # 제스처 인식 결과가 있을 때 버퍼 리스트에 추가
     if recognized_gesture is not None:
-        frame = overlay_image_on_frame(frame, session_state.overlay_image)
         session_state.gesture_buffer.append(recognized_gesture)
 
     # 버퍼 리스트에 타겟 제스처가 60% 이상일 때
@@ -353,7 +353,7 @@ async def situation2(request: Request, country: str = None):
 
     sessions[session_id].target_gesture = random.choice(country_gestures.get(country))
     sessions[session_id].overlay_image = cv2.imread(
-        f"app/static/img/{gesture_guidline.get(sessions[session_id].target_gesture)}",
+        f"app/static/img/gestureGuide/{gesture_guidline.get(sessions[session_id].target_gesture)}",
         cv2.IMREAD_UNCHANGED,
     )
 

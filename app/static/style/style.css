@@ -229,18 +229,6 @@ div#wrap.success {
 
 /* 제스처 성공 끝 */
 
-
-/* 제스처 실패 시작 */
-div#wrap.fail {
-    padding: 5px;
-    background-color: #ece6d9;
-}
-
-div#wrap.fail div#btnArea {
-    text-align: right;
-    margin-left: 20px;
-}
-
 div#btnArea button {
     width: 100px;
     padding: 5px 10px;
@@ -255,8 +243,6 @@ div#btnArea button:hover {
     cursor: pointer;
     background-color: #fff;
 }
-
-/* 제스처 실패 끝 */
 
 
 /* 다시하기 페이지 시작 */
@@ -300,7 +286,7 @@ div.dangerN {
 div.dangerN span {
     width: 170px;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 15px;
     display: inline-block;
     text-align: center;
     margin-top: 5px;
@@ -326,11 +312,17 @@ div.gestureImg img {
     width: 300px;
     height: 260px;
 }
-
-div#next i#goMain {
-    margin-top: 250px;
-    margin-left: 50px;
+div#goMainContainer{
+    text-align: right;
+}
+button#goMain {
     width: 100px;
+    padding: 5px 10px;
+    font-size: 18px;
+    margin: 25px 10px;
+    border-radius: 10px;
+    border: 3px solid #aaa;
+    cursor: pointer;
 }
 
 /* 다시하기 페이지 끝 */

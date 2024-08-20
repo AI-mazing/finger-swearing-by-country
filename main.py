@@ -28,10 +28,7 @@ origins = ["*"]
 
 # MySQL 연결 설정
 conn = mysql.connector.connect(
-    host='192.168.0.10',
-    user='AIMazing',
-    password='1234',
-    database='etiquette'
+    host="192.168.0.10", user="AIMazing", password="1234", database="etiquette"
 )
 
 # FastAPI 앱 생성
@@ -117,7 +114,8 @@ def dist(x1, y1, x2, y2):
 # PNG 이미지를 프레임에 오버레이하는 함수
 def overlay_image_on_frame(frame, overlay):
     # 이미지 크기 조정 (프레임과 동일한 크기로 조정)
-    if frame is None : return 
+    if frame is None:
+        return
     overlay_resized = cv2.resize(overlay, (frame.shape[1], frame.shape[0]))
 
     # PNG 파일은 투명한 배경을 가지고 있기 때문에 알파 채널을 고려하여 오버레이합니다.
@@ -226,13 +224,14 @@ def process_frame(frame, session_state: SessionState):
 
     return frame
 
+
 def find_image(country, image_name):
     base_path = f"app/static/img/nation/{country}/"
     web_base_path = f"/static/img/nation/{country}/"
-    
+
     png_path = f"{base_path}{image_name}.png"
     jpg_path = f"{base_path}{image_name}.jpg"
-    
+
     if os.path.exists(png_path):
         return f"{web_base_path}{image_name}.png"
     elif os.path.exists(jpg_path):
@@ -240,17 +239,19 @@ def find_image(country, image_name):
     else:
         return f"/static/img/default_{image_name}.jpg"  # 기본 이미지 경로
 
+
 def find_image2(country):
     base_path = f"app/static/img/flag/{country}"
     web_base_path = f"/static/img/flag/{country}"
-    
+
     png_path = f"{base_path}Flag.gif"
     jpg_path = f"{base_path}Flag.jpg"
-    
+
     if os.path.exists(png_path):
         return f"{web_base_path}Flag.gif"
     elif os.path.exists(jpg_path):
         return f"{web_base_path}Flag.jpg"
+
 
 def query_result(val_name, query):
     cursor = conn.cursor()
@@ -259,12 +260,14 @@ def query_result(val_name, query):
     result = cursor.fetchone()
     return result
 
+
 def query_result2(val_name, query):
     cursor = conn.cursor()
     query = query
     cursor.execute(query, (val_name,))
     result = cursor.fetchall()
     return result
+
 
 # WebSocket을 통해 비디오 스트림 제공
 @app.websocket("/ws/{session_id}")
@@ -319,14 +322,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 # 메인 페이지
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    session_id = request.cookies.get("session_id")
-    # 쿠키에 세션 ID가 없을 때 새로 생성
-    if not session_id:
-        session_id = str(uuid.uuid4())
-    # 세션 상태가 없을 때 새로 생성
-    if session_id not in sessions:
-        sessions[session_id] = SessionState()
-
+    # 세션 아이디 생성
+    session_id = str(uuid.uuid4())
+    # 세션 상대 아이디 지정
+    sessions[session_id] = SessionState()
     response = templates.TemplateResponse(
         "Main.html",
         {
@@ -357,7 +356,7 @@ async def global_page(request: Request):
 # Situation1 페이지
 @app.get("/situation1", response_class=HTMLResponse)
 async def situation1(request: Request, country: str = None):
-    
+
     session_id = request.cookies.get("session_id")
     print(f"Session ID in /situation1: {session_id}")
     # 쿠키에 세션 ID가 없을 때 새로 생성
@@ -413,8 +412,8 @@ async def situation1(request: Request, country: str = None):
             "session_id": session_id,
             "target_gesture": sessions[session_id].target_gesture,
             "overlay_image": sessions[session_id].overlay_image,
-            "message" : message,
-            "background_image": background_image
+            "message": message,
+            "background_image": background_image,
         },
     )
     response.set_cookie(key="session_id", value=session_id)
@@ -461,9 +460,11 @@ async def situation2(request: Request, country: str = None):
 
     if result:
         combined_contents, person_name = result
-        contents_list = combined_contents.split('|')
+        contents_list = combined_contents.split("|")
         if len(contents_list) >= 3:
-            message = ' '.join(contents_list[1:3])  # 두 번째와 세 번째 시나리오 내용 사용
+            message = " ".join(
+                contents_list[1:3]
+            )  # 두 번째와 세 번째 시나리오 내용 사용
         else:
             message = "충분한 시나리오 내용이 없습니다."
         name = person_name
@@ -482,9 +483,9 @@ async def situation2(request: Request, country: str = None):
             "selected_country": country,
             "session_id": session_id,
             "target_gesture": sessions[session_id].target_gesture,
-            "message" : message,
-            "name" : name,
-            "person_image" : person_image
+            "message": message,
+            "name": name,
+            "person_image": person_image,
         },
     )
     response.set_cookie(key="session_id", value=session_id)
@@ -533,13 +534,17 @@ async def success(request: Request):
     # 세션 상태 초기화
     sessions[session_id].gesture_recognized = False
 
-    return templates.TemplateResponse("success.html", 
-                                      {"request": request,
-                                       "message": message,
-                                       "name": name,
-                                       "person_smile_image": person_smile_image,
-                                       "person_angry_image": person_angry_image,
-                                       })
+    return templates.TemplateResponse(
+        "success.html",
+        {
+            "request": request,
+            "message": message,
+            "name": name,
+            "person_smile_image": person_smile_image,
+            "person_angry_image": person_angry_image,
+        },
+    )
+
 
 # Success 페이지
 @app.get("/gestureText", response_class=HTMLResponse)
@@ -569,7 +574,7 @@ async def gestureText(request: Request):
     WHERE 
         g.gesture_name = %s;
     """
-    
+
     result = query_result2(gesture_guidline[target_gesture][:-4], query)
     # 나라 정보 초기화
     nation1, nation2, nation3, nation4 = None, None, None, None
@@ -584,20 +589,18 @@ async def gestureText(request: Request):
     if len(result) > 3:
         nation4 = (result[3][0], result[3][1], find_image2(result[3][0]))
 
-
     return templates.TemplateResponse(
-        "gestureText.html", 
+        "gestureText.html",
         {
             "request": request,
             "gesture": gesture_guidline[target_gesture],
             "nation1": nation1,
             "nation2": nation2,
             "nation3": nation3,
-            "nation4": nation4
-        }
+            "nation4": nation4,
+        },
     )
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
-
-

@@ -5,6 +5,9 @@ from collections import deque
 import asyncio
 import uuid
 import random
+import os
+import json
+from dotenv import load_dotenv
 
 import cv2
 import mediapipe as mp
@@ -21,15 +24,46 @@ import mysql.connector
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 
-import os
-
+load_dotenv()
 # CORS 설정: 모든 출처에서의 요청 허용
 origins = ["*"]
 
+db_host = os.getenv("DB_HOST")
+db_user = os.getenv("DB_USER")
+db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+
+with open("config.json", "r") as file:
+    config_data = json.load(file)
+# 나라별 제스처 매핑
+country_gestures = config_data["country_gestures"]
+# 제스쳐 별 가이드라인 매핑
+gesture_guidline = config_data["gesture_guidelines"]
+# 제스처 목록(손가락 상태, 제스처 이름)
+gesture = [
+    [True, True, True, True, True, "Open Palm"],
+    [False, False, True, True, True, "OK"],
+    [False, False, False, False, True, "mini"],
+    [True, False, False, False, False, "Thumb up"],
+    [False, True, False, False, True, "Rock&Roll"],
+    [False, True, True, False, False, "V"],
+]
+
 # MySQL 연결 설정
 conn = mysql.connector.connect(
-    host="192.168.0.10", user="AIMazing", password="1234", database="etiquette"
+    host=db_host, user=db_user, password=db_password, database=db_name
 )
+
+# MediaPipe 손 감지 초기화
+mpHands = mp.solutions.hands
+my_hands = mpHands.Hands()
+mpDraw = mp.solutions.drawing_utils
+
+# 제스처 인식 패턴
+compareIndex = [[18, 4], [6, 8], [10, 12], [14, 16], [18, 20]]
+# 손가락 상태(펼침/접힘
+open = [False] * len(compareIndex)
+
 
 # FastAPI 앱 생성
 app = FastAPI()
@@ -44,50 +78,6 @@ app.add_middleware(
 # Jinja2 템플릿 디렉토리 설정
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-# MediaPipe 손 감지 초기화
-mpHands = mp.solutions.hands
-my_hands = mpHands.Hands()
-mpDraw = mp.solutions.drawing_utils
-
-# 제스처 인식 패턴
-compareIndex = [[18, 4], [6, 8], [10, 12], [14, 16], [18, 20]]
-# 손가락 상태(펼침/접힘
-open = [False] * len(compareIndex)
-
-# 제스처 목록(손가락 상태, 제스처 이름)
-gesture = [
-    [True, True, True, True, True, "Open Palm"],
-    [False, False, True, True, True, "OK"],
-    [False, False, False, False, True, "mini"],
-    [True, False, False, False, False, "Thumb up"],
-    [False, True, False, False, True, "Rock&Roll"],
-    [False, True, True, False, False, "V"],
-]
-# 나라별 제스처 매핑
-country_gestures = {
-    "Brazil": ["OK"],
-    "Turkiye": ["OK", "V", "Open Palm"],
-    "Saudi": ["OK", "Thumb up"],
-    "France": ["OK"],
-    "Australia": ["Thumb up", "Reverse V"],
-    "Greece": ["Thumb up", "V", "Open Palm"],
-    "England": ["Reverse V"],
-    "NewZealand": ["Reverse V"],
-    "Italy": ["Rock&Roll"],
-    "China": ["mini"],
-}
-
-# 제스쳐 별 가이드라인 매핑
-gesture_guidline = {
-    "Open Palm": "palm.png",
-    "OK": "ok.png",
-    "mini": "mini.png",
-    "Thumb up": "thumb.png",
-    "Rock&Roll": "rocknroll.png",
-    "V": "v.png",
-    "Reverse V": "rv.png",
-}
 
 
 # 세션 상태 클래스
@@ -225,35 +215,19 @@ def process_frame(frame, session_state: SessionState):
     return frame
 
 
-def find_image(country, image_name):
-    base_path = f"app/static/img/nation/{country}/"
+def find_nation_image_path(country, image_name):
     web_base_path = f"/static/img/nation/{country}/"
-
-    png_path = f"{base_path}{image_name}.png"
-    jpg_path = f"{base_path}{image_name}.jpg"
-
-    if os.path.exists(png_path):
-        return f"{web_base_path}{image_name}.png"
-    elif os.path.exists(jpg_path):
-        return f"{web_base_path}{image_name}.jpg"
-    else:
-        return f"/static/img/default_{image_name}.jpg"  # 기본 이미지 경로
+    jpg_path = f"{web_base_path}{image_name}.jpg"
+    return jpg_path
 
 
-def find_image2(country):
-    base_path = f"app/static/img/flag/{country}"
+def find_nationflag_image_path(country):
     web_base_path = f"/static/img/flag/{country}"
-
-    png_path = f"{base_path}Flag.gif"
-    jpg_path = f"{base_path}Flag.jpg"
-
-    if os.path.exists(png_path):
-        return f"{web_base_path}Flag.gif"
-    elif os.path.exists(jpg_path):
-        return f"{web_base_path}Flag.jpg"
+    jpg_path = f"{web_base_path}Flag.jpg"
+    return jpg_path
 
 
-def query_result(val_name, query):
+def query_result_one(val_name, query):
     cursor = conn.cursor()
     query = query
     cursor.execute(query, (val_name,))
@@ -261,7 +235,7 @@ def query_result(val_name, query):
     return result
 
 
-def query_result2(val_name, query):
+def query_result_all(val_name, query):
     cursor = conn.cursor()
     query = query
     cursor.execute(query, (val_name,))
@@ -324,7 +298,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 async def index(request: Request):
     # 세션 아이디 생성
     session_id = str(uuid.uuid4())
-    # 세션 상대 아이디 지정
+    # 세션 스테이트에 아이디 추가
     sessions[session_id] = SessionState()
     response = templates.TemplateResponse(
         "Main.html",
@@ -374,7 +348,7 @@ async def situation1(request: Request, country: str = None):
     elif country == "random":
         country = random.choice(list(country_gestures.keys()))
     sessions[session_id].country = country
-    # gestures = country_gestures.get(country)
+
     # country_name을 기반으로 시나리오 내용과 nation_person_name을 가져오는 쿼리
     query = """
     SELECT 
@@ -393,15 +367,16 @@ async def situation1(request: Request, country: str = None):
     LIMIT 1
     """
 
-    result = query_result(country, query)
-
+    result = query_result_one(country, query)
+    # 쿼리 결과가 있을 때
     if result:
         scenario_content, person_name = result
         message = f"{scenario_content} {person_name}(이)가 당신에게 다가옵니다."
+    # 쿼리 결과가 없을 때
     else:
         message = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
-
-    background_image = find_image(country, "background")
+    # 나라에 맞는 배경 이미지 경로
+    background_image = find_nation_image_path(country, "background")
     response = templates.TemplateResponse(
         "situation1.html",
         {
@@ -455,8 +430,8 @@ async def situation2(request: Request, country: str = None):
     GROUP BY n.nation_id, n.nation_person_name
     HAVING COUNT(DISTINCT sc.scenario_content_id) >= 3
     """
-
-    result = query_result(country, query)
+    # situation2에서 표시될 시스템 메시지 및 인물 이미지 가져오기
+    result = query_result_one(country, query)
 
     if result:
         combined_contents, person_name = result
@@ -468,7 +443,7 @@ async def situation2(request: Request, country: str = None):
         else:
             message = "충분한 시나리오 내용이 없습니다."
         name = person_name
-        person_image = find_image(country, "person_smile")
+        person_image = find_nation_image_path(country, "person_smile")
     else:
         message = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
         name = "해당 국가에 대한 시나리오나 인물 정보를 찾을 수 없습니다."
@@ -520,12 +495,12 @@ async def success(request: Request):
     LIMIT 1 OFFSET 1
     """
 
-    result = query_result(country, query)
+    result = query_result_one(country, query)
 
     if result:
         message, name = result
-        person_smile_image = find_image(country, "person_smile")
-        person_angry_image = find_image(country, "person_angry")
+        person_smile_image = find_nation_image_path(country, "person_smile")
+        person_angry_image = find_nation_image_path(country, "person_angry")
     else:
         message = "해당 국가에 대한 시나리오를 찾을 수 없습니다."
         name = "알 수 없는 인물"
@@ -574,20 +549,20 @@ async def gestureText(request: Request):
     WHERE 
         g.gesture_name = %s;
     """
-
-    result = query_result2(gesture_guidline[target_gesture][:-4], query)
+    # 동일한 제스처를 사용하는데 주의해야 하는 나라 리스트 가져오기
+    result = query_result_all(gesture_guidline[target_gesture][:-4], query)
     # 나라 정보 초기화
     nation1, nation2, nation3, nation4 = None, None, None, None
 
     # 결과를 최대 4개까지 할당합니다.
     if len(result) > 0:
-        nation1 = (result[0][0], result[0][1], find_image2(result[0][0]))
+        nation1 = (result[0][0], result[0][1], find_nationflag_image_path(result[0][0]))
     if len(result) > 1:
-        nation2 = (result[1][0], result[1][1], find_image2(result[1][0]))
+        nation2 = (result[1][0], result[1][1], find_nationflag_image_path(result[1][0]))
     if len(result) > 2:
-        nation3 = (result[2][0], result[2][1], find_image2(result[2][0]))
+        nation3 = (result[2][0], result[2][1], find_nationflag_image_path(result[2][0]))
     if len(result) > 3:
-        nation4 = (result[3][0], result[3][1], find_image2(result[3][0]))
+        nation4 = (result[3][0], result[3][1], find_nationflag_image_path(result[3][0]))
 
     return templates.TemplateResponse(
         "gestureText.html",

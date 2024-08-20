@@ -1,0 +1,23 @@
+{
+    "country_gestures": {
+      "Brazil": ["OK"],
+      "Turkiye": ["OK", "V", "Open Palm"],
+      "Saudi": ["OK", "Thumb up"],
+      "France": ["OK"],
+      "Australia": ["Thumb up", "Reverse V"],
+      "Greece": ["Thumb up", "V", "Open Palm"],
+      "England": ["Reverse V"],
+      "NewZealand": ["Reverse V"],
+      "Italy": ["Rock&Roll"],
+      "China": ["mini"]
+    },
+    "gesture_guidelines": {
+      "Open Palm": "palm.jpg",
+      "OK": "ok.jpg",
+      "mini": "mini.jpg",
+      "Thumb up": "thumb.jpg",
+      "Rock&Roll": "rocknroll.jpg",
+      "V": "v.jpg",
+      "Reverse V": "rv.jpg"
+    }
+}
